@@ -26,6 +26,8 @@ struct LiquidGlass {
         var materialTint: SIMD4<Float> = .zero      // RGBA; e.g., subtle cyan (0.2, 0.8, 1.0, 1.0)
         var glassThickness: Float                   // Fake parallax depth (e.g., 8-16 px)
         var refractiveIndex: Float                  // 1.45-1.52 for borosilicate glass feel
+        var refractionScale: Float                  // Geometric background displacement strength.
+        var refractionDepthExponent: Float          // Lower values spread refraction farther from the edge.
         var dispersionStrength: Float               // 0.0-0.02; prismatic color split on edges
         var fresnelDistanceRange: Float             // px falloff from silhouette (e.g., 32)
         var fresnelIntensity: Float                 // 0.0-1.0; rim lighting boost
@@ -59,6 +61,8 @@ struct LiquidGlass {
                 materialTint: .init(x: 0.9, y: 0.95, z: 1.0, w: 0.15), // Near-clear with cool bias.
                 glassThickness: 10,
                 refractiveIndex: 1.11,
+                refractionScale: 0.05,
+                refractionDepthExponent: 2,
                 dispersionStrength: 5,
                 fresnelDistanceRange: 70,
                 fresnelIntensity: 0,
@@ -81,6 +85,8 @@ struct LiquidGlass {
         shaderUniforms: .init(
             glassThickness: 6,
             refractiveIndex: 1.1,
+            refractionScale: 0.05,
+            refractionDepthExponent: 2,
             dispersionStrength: 15,
             fresnelDistanceRange: 70,
             fresnelIntensity: 0,
@@ -100,8 +106,10 @@ struct LiquidGlass {
 
     static let regular = Self.init(
         shaderUniforms: .init(
-            glassThickness: 10,
+            glassThickness: 14,
             refractiveIndex: 1.5,
+            refractionScale: 0.075,
+            refractionDepthExponent: 1.45,
             dispersionStrength: 5,
             fresnelDistanceRange: 70,
             fresnelIntensity: 0,
@@ -122,8 +130,10 @@ struct LiquidGlass {
     static let clear = Self.init(
         shaderUniforms: .init(
             materialTint: .init(x: 1.0, y: 1.0, z: 1.0, w: 0.03),
-            glassThickness: 8,
-            refractiveIndex: 1.12,
+            glassThickness: 14,
+            refractiveIndex: 1.28,
+            refractionScale: 0.09,
+            refractionDepthExponent: 1.45,
             dispersionStrength: 4,
             fresnelDistanceRange: 70,
             fresnelIntensity: 0.04,

@@ -36,6 +36,8 @@ struct ShaderUniforms {
     float4 materialTint;             // RGBA tint for glass color
     float glassThickness;            // Simulated thickness (pixels) for refraction depth
     float refractiveIndex;           // Base refractive index of glass
+    float refractionScale;           // Geometric background displacement strength
+    float refractionDepthExponent;   // Lower values spread refraction farther from the edge
     float dispersionStrength;        // Chromatic aberration intensity
     float fresnelDistanceRange;      // Edge distance over which Fresnel builds
     float fresnelIntensity;          // Overall Fresnel reflection strength
@@ -455,8 +457,8 @@ fragment half4 liquidGlassEffect(VertexOutput input [[stage_in]],
         float normalizedDepth = -shapeDistance * logicalResolution.y;
 
         // Refraction shift factor
-        float depthRatio = 1.0f - normalizedDepth / uniforms.glassThickness;
-        float incidentAngle = asin(pow(depthRatio, 2.0f));
+        float depthRatio = clamp(1.0f - normalizedDepth / uniforms.glassThickness, 0.0f, 1.0f);
+        float incidentAngle = asin(pow(depthRatio, uniforms.refractionDepthExponent));
         float transmittedAngle = asin(1.0f / uniforms.refractiveIndex * sin(incidentAngle));
         float edgeShiftFactor = -tan(transmittedAngle - incidentAngle);
         if (normalizedDepth >= uniforms.glassThickness) {
@@ -469,7 +471,7 @@ fragment half4 liquidGlassEffect(VertexOutput input [[stage_in]],
         } else {
             float2 surfaceNormal = computeSurfaceNormal(fragmentPixelCoord, uniforms);
             // Dispersion-sampled refraction (scale/aspect corrected)
-            half2 offsetUv = half2(-surfaceNormal * edgeShiftFactor * 0.05f * uniforms.contentsScale * float2(
+            half2 offsetUv = half2(-surfaceNormal * edgeShiftFactor * uniforms.refractionScale * uniforms.contentsScale * float2(
                 uniforms.resolution.y / (logicalResolution.x * uniforms.contentsScale),
                 1.0f
             ));
