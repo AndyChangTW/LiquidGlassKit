@@ -26,7 +26,12 @@ public class LiquidGlassEffectView: UIView, AnyVisualEffectView {
 
         super.init(frame: .zero)
 
-        let liquidGlassView = LiquidGlassView(effect.style.liquidGlass)
+        var liquidGlass = effect.style.liquidGlass
+        if let tintColor = effect.tintColor {
+            liquidGlass.tintColor = tintColor
+        }
+
+        let liquidGlassView = LiquidGlassView(liquidGlass)
         addSubview(liquidGlassView)
         self.liquidGlassView = liquidGlassView
         
@@ -82,7 +87,7 @@ public class LiquidGlassEffect: UIVisualEffect {
         var liquidGlass: LiquidGlass {
             switch self {
             case .regular: .regular
-            case .clear: .regular // TODO: Add clear LiquidGlass preset.
+            case .clear: .clear
             }
         }
     }

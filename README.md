@@ -51,6 +51,8 @@ A `UIVisualEffectView`-compatible wrapper that provides liquid glass effects thr
 - **Interactive Mode**: Optional touch-responsive behavior
 - **Tint Customization**: Per-effect color tinting
 
+The custom fallback renderer provides separate presets for both `regular` and `clear`. On iOS 26+, `isNative: true` maps these styles to the native `UIGlassEffect.Style` values. On older iOS versions, or when `isNative` is `false`, `.regular` keeps the frosted/tinted material and `.clear` uses a mostly transparent, unblurred preset with subtle edge refraction and highlights.
+
 > [!NOTE]
 > LiquidGlassKit declares the `AnyVisualEffectView` protocol, which both native `UIVisualEffectView` and the custom `LiquidGlassEffectView` conform to, enabling seamless interoperability between implementations.
 
@@ -105,7 +107,14 @@ let slider = LiquidGlassSlider.make(isNative: true)
 
 // Automatically uses native UIVisualEffectView on iOS 26+, custom on older versions
 let effectView = VisualEffectView(effect: LiquidGlassEffect(style: .regular, isNative: true))
+
+// Force the custom fallback renderer and use the clear preset
+let clearFallbackView = VisualEffectView(effect: LiquidGlassEffect(style: .clear, isNative: false))
 ```
+
+### Clear Preset Demo
+
+A minimal UIKit demo is available at `Examples/ClearPresetDemo`. It renders a high-contrast background and compares fallback `.regular`, fallback `.clear`, and the native iOS 26 variants when available.
 
 ### UILiquidLensView
 
