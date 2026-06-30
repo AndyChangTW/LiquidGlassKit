@@ -151,34 +151,6 @@ struct LiquidGlass {
     )
 }
 
-final class BackdropView: UIView {
-
-    override class var layerClass: AnyClass {
-        // CABackdropLayer is a private API that captures content behind the layer
-        NSClassFromString("CABackdropLayer") ?? CALayer.self
-    }
-
-    init() {
-        super.init(frame: .zero)
-
-        // Configure backdrop view
-        isUserInteractionEnabled = false
-        layer.setValue(false, forKey: "layerUsesCoreImageFilters")
-
-        // Configure backdrop layer properties (private API)
-        layer.setValue(true, forKey: "windowServerAware")
-        layer.setValue(UUID().uuidString, forKey: "groupName")
-//        layer.setValue(1.0, forKey: "scale")  // Full resolution for capture
-//        layer.setValue(0.0, forKey: "bleedAmount")
-//        layer.setValue(false, forKey: "allowsHitTesting")
-//        layer.setValue(true, forKey: "captureOnly")
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
 final class ShadowView: UIView {
 
     init() {
@@ -261,9 +233,6 @@ final class LiquidGlassView: MTKView {
     // Shadow overlay subview
     private weak var shadowView: ShadowView?
 
-    // Backdrop capture view (stays in superview, contains only CABackdropLayer)
-    private let backdropView = BackdropView()
-
     init(_ liquidGlass: LiquidGlass) {
         self.liquidGlass = liquidGlass
 
@@ -307,11 +276,7 @@ final class LiquidGlassView: MTKView {
     // MARK: - Background Capture
 
     func captureBackground() {
-        if #available(iOS 26.2, *) {
-            captureRootView()
-        } else {
-            captureBackdrop()
-        }
+        captureRootView()
     }
 
     /// Captures the background content via root View using (presentation) Layer render.
@@ -354,43 +319,6 @@ final class LiquidGlassView: MTKView {
 
         blurTexture()
     }
-
-    /// Captures the background content via CABackdropLayer using drawHierarchy.
-    /// Noticeable rendering delay.
-    func captureBackdrop() {
-        guard let superview else { return }
-        
-        let sizeCoefficient = liquidGlass.backgroundTextureSizeCoefficient
-        let scaleCoefficient = layer.contentsScale * liquidGlass.backgroundTextureScaleCoefficient
-
-        // Calculate frame using presentation layer for smooth animation tracking
-        let currentLayer = layer.presentation() ?? layer
-        let frameInSuperview = currentLayer.convert(currentLayer.bounds, to: superview.layer)
-        let captureSize = CGSize(width: frameInSuperview.width * sizeCoefficient,
-                                 height: frameInSuperview.height * sizeCoefficient)
-        let captureOrigin = CGPoint(x: frameInSuperview.midX - captureSize.width / 2,
-                                    y: frameInSuperview.midY - captureSize.height / 2)
-        
-        // Position backdrop view and layer
-        backdropView.frame = CGRect(origin: captureOrigin, size: captureSize)
-
-        // Ensure backdrop view is in superview (below us)
-        if backdropView.superview !== superview {
-            superview.insertSubview(backdropView, belowSubview: self)
-        }
-        
-        // Capture using drawHierarchy (gets windowserver-composited content)
-        backgroundTexture = zeroCopyBridge.render { context in
-            context.scaleBy(x: scaleCoefficient, y: scaleCoefficient)
-
-            UIGraphicsPushContext(context)
-            backdropView.drawHierarchy(in: backdropView.bounds, afterScreenUpdates: false)
-            UIGraphicsPopContext()
-        }
-
-        blurTexture()
-    }
-
     func blurTexture() {
         guard liquidGlass.backgroundTextureBlurRadius > 0,
               let device,
